@@ -2,7 +2,7 @@
 //
 // Author: Suresh Bysani
 //
-// The file contains the data model for rest apis for all the apis needed for the assignment.
+// The file contains the data model for all the apis needed for the assignment.
 
 package models
 

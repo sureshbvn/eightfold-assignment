@@ -1,3 +1,6 @@
+# Docker file for logporcessor service
+# Author: Suresh Bysani
+
 # Use the official Golang image as the base image
 FROM golang:1.17
 
