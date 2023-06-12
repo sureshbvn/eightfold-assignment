@@ -65,7 +65,7 @@ The assignment comprises the following components, each serving a specific purpo
 
   Basic Stats API:
   ```
-  curl http://localhost:8080/basicStats?start=timestamp1&end=timestamp2
+ curl -X GET -H "Content-Type: application/json" -d '{"start_time_seconds": 1496999565, "end_time_seconds": 1696999565}' http://localhost:8080/basicStats
   ```
   
   Bonus API1:
