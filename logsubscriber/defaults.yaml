@@ -1,0 +1,14 @@
+kafka:
+  bootstrap_servers: "kafka:9092"
+  topic: "processor-messages"
+
+db:
+  host: postgres
+  port: 5432
+  username: suresh
+  password: suresh
+  database: olap
+
+logsubscriber:
+  logs_directory: "/app/data"
+  sanitized_logs_directory: "/app/data/sanitized"

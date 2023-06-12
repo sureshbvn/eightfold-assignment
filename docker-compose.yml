@@ -1,0 +1,123 @@
+# Docker Compose file for eightfold assignment
+# Author: Suresh Bysani
+#
+# At a high level the microservices are dividing into two groups. The first group is the infra services. The second
+# group is the microservices that are responsible for log processing and stats preparation. The second group is
+# authored for this assignment.
+#
+# There is a bridge network created eightfold network. Using this network, inter microservice communication is enabled.
+
+version: '3'
+services:
+  ######################################################################################################################
+  # Infra services.
+  # 1. Zookeeper (Needed by kafka).
+  # 2. Kafka.
+  # 3. Postgres (OLAP equivalent. Since most OLAP databbases uses SQL like querries, using Postgres SQL for simplicity)
+  #             (In reality this will be some OLAP database like Redshift, Bigquery, Druid or may be casandra).
+  ######################################################################################################################
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: always
+    networks:
+      - eightfold-network
+
+  kafka:
+    image: confluentinc/cp-enterprise-kafka
+    hostname: messageq
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://messageq:9092'
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: messageq:9092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    restart: always
+    networks:
+      - eightfold-network
+
+  postgres:
+    build:
+      context: ./postgres
+    environment:
+      - POSTGRES_USER=suresh
+      - POSTGRES_PASSWORD=suresh
+      - POSTGRES_DB=olap
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    command: bash -c "chmod -R 777 /var/lib/postgresql/data && rm -rf /var/lib/postgresql/data/* && docker-entrypoint.sh postgres"
+    networks:
+      - eightfold-network
+
+
+
+  #####################################################################################################################
+  # Services responsible for processor-parsing, processor-aggregation and query layer.
+  #
+  # 1. logprocessor - A golang based microservice. This is responsible for reading the log lines from the files and
+  #                   writing them to kafka.
+  #
+  # 2. logsubscriber - A golang based microservice. This establishes a kafka consumer. Reads each processor message
+  #                    from kafka and creates sanitized files as well as stats needed for answering the apis.
+  #
+  # 3. API server - A golang based microservice. Provides RESTful apis to get data for input problems.
+  #####################################################################################################################
+
+  logprocessor:
+    build:
+      context: logprocessor
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/app/data
+    restart: always
+    networks:
+      - eightfold-network
+
+  logsubscriber:
+    build:
+      context: logsubscriber
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/app/data
+    restart: always
+    networks:
+      - eightfold-network
+
+  apiserver:
+    build:
+      context: apiserver
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - eightfold-network
+
+networks:
+  eightfold-network:
+    driver: bridge

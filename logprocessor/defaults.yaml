@@ -1,0 +1,8 @@
+kafka:
+  bootstrap_servers: "kafka:9092"
+  topic: "processor-messages"
+
+log_processor:
+  logs_directory: "/app/data/input"
+  max_files_per_batch: 10
+  max_parallel_lines: 100
