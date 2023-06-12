@@ -20,6 +20,15 @@ The assignment adheres to a well-organised folder structure to ensure clarity an
 | eightfold/apiserver/       | Houses the code for the API Server microservice                    |
 | eightfold/docker-compose.yml | Provides the Docker Compose file for orchestrating the microservices and infrastructure |
 
+## High-Level Design 
+
+<p align="center">
+  <img src="HLD.png" alt="High-Level Design Diagram" />
+</p>
+
+
+
+
 ## Components
 
 The assignment comprises the following components, each serving a specific purpose within the system:
